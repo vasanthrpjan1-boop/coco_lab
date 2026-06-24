@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merchantrade — Building the Ecosystem LTV Engine with Cortex Code</title>
+<style>
+  :root {
+    --navy: #4A0D14;          /* deep Merchantrade maroon (headings / dark bands) */
+    --navy-light: #6E141C;
+    --accent: #E2231A;        /* Merchantrade brand red */
+    --accent2: #E8A93D;       /* warm gold secondary accent */
+    --accent-glow: rgba(226, 35, 26, 0.12);
+    --brand-bright: #FE0000;  /* true brand red for small pops */
+    --green: #2E9E5B;
+    --amber: #E8930C;
+    --red: #C0392B;
+    --gold: #E8A93D;
+    --bg: #FAF6F4;            /* warm off-white */
+    --card-bg: #FFFFFF;
+    --text: #2C2024;
+    --text-light: #6B5A5E;
+    --border: #EDE2E0;
+    --code-bg: #F5EEEC;
+    --learning-bg: #FDEEEC;   /* warm red tint */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px;
+  }
+  .hero {
+    background: linear-gradient(135deg, #E2231A 0%, #A60010 55%, #6E0008 100%);
+    color: white; padding: 56px 40px; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.10) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(232,169,61,0.10) 0%, transparent 40%);
+    animation: float 20s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(1deg); } }
+  .hero h1 { font-size: 2.3em; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; position: relative; }
+  .hero .subtitle { font-size: 1.12em; opacity: 0.88; font-weight: 300; position: relative; max-width: 720px; margin: 0 auto; }
+  .hero .badge {
+    display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45);
+    padding: 6px 18px; border-radius: 20px; font-size: 0.85em; margin-top: 16px; position: relative;
+  }
+  .hero .badge + .badge { margin-left: 8px; }
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 2px solid var(--border); background: white;
+    padding: 0 40px; position: sticky; top: 0; z-index: 101; overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 14px 20px; border: none; background: none; font-size: 0.88em; font-weight: 600;
+    color: var(--text-light); cursor: pointer; border-bottom: 3px solid transparent;
+    margin-bottom: -2px; transition: all 0.2s; white-space: nowrap;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover { color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .container { max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+  .section-divider {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white; padding: 36px 40px; margin: 0 -24px 32px; text-align: center;
+  }
+  .section-divider h2 { font-size: 1.8em; margin-bottom: 6px; color: white; border-bottom: none; }
+  .section-divider p { opacity: 0.88; font-size: 1.05em; max-width: 680px; margin: 0 auto; }
+  .part-label {
+    display: inline-block; background: var(--accent); color: white; font-size: 0.75em; font-weight: 700;
+    padding: 4px 12px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+  }
+  h2 { font-size: 1.6em; color: var(--navy); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+  h3 { font-size: 1.2em; color: var(--navy); margin: 28px 0 12px; }
+  h4 { font-size: 1.05em; color: var(--navy-light); margin: 22px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 16px 22px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.88em; color: var(--navy);
+  }
+  .welcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+  .part-card { background: white; border-radius: 12px; padding: 22px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .part-card h3 { margin-top: 0; font-size: 1.05em; }
+  .tip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 24px; }
+  .tip { background: white; padding: 14px 18px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 0.92em; }
+  .tip strong { color: var(--navy); }
+  .exercise-card { background: white; border-radius: 12px; padding: 28px; margin: 24px 0; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .exercise-card h2 { margin-top: 4px; }
+  .capability { display: inline-block; background: var(--accent-glow); color: var(--accent); font-size: 0.82em; font-weight: 600; padding: 4px 14px; border-radius: 6px; margin-bottom: 16px; }
+  .progress-tag { display: inline-block; background: #EDF2F6; color: var(--text-light); font-size: 0.72em; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-bottom: 12px; letter-spacing: 0.5px; }
+  .prompt-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px 20px;
+    margin: 22px 0 16px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.86em;
+    line-height: 1.75; white-space: pre-wrap; position: relative; cursor: pointer; transition: border-color 0.2s;
+  }
+  .prompt-block:hover { border-color: var(--accent); }
+  .prompt-block::before {
+    content: 'PROMPT \2014 Click to copy'; position: absolute; top: -10px; left: 16px; background: var(--navy);
+    color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.7em;
+    font-weight: 600; padding: 2px 10px; border-radius: 4px; letter-spacing: 0.5px;
+  }
+  .prompt-block.copied::before { content: 'COPIED!'; background: var(--green); }
+  .cli-block {
+    background: #2A1012; border: 1px solid #4A1A1E; border-radius: 8px; padding: 18px 20px;
+    margin: 18px 0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82em;
+    line-height: 1.7; white-space: pre; overflow-x: auto; color: #f3dcdd; position: relative; cursor: pointer;
+  }
+  .cli-block::before {
+    content: 'TERMINAL \2014 Click to copy'; position: absolute; top: -10px; left: 16px; background: var(--accent);
+    color: #fff; font-family: -apple-system, sans-serif; font-size: 0.7em; font-weight: 700;
+    padding: 2px 10px; border-radius: 4px; letter-spacing: 0.5px;
+  }
+  .cli-block.copied::before { content: 'COPIED!'; background: var(--green); color: white; }
+  .code-block-wrapper { position: relative; margin: 22px 0 16px; }
+  .code-block-label { display: inline-block; background: rgba(226,35,26,0.18); color: var(--accent); font-size: 0.7em; font-weight: 700; padding: 3px 12px; border-radius: 4px 4px 0 0; letter-spacing: 0.5px; text-transform: uppercase; }
+  .code-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 0 8px 8px 8px; padding: 18px 20px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.8em; line-height: 1.7;
+    white-space: pre; overflow-x: auto; color: var(--text); cursor: pointer; transition: border-color 0.2s;
+  }
+  .code-block:hover { border-color: var(--accent); }
+  .code-block.copied { border-color: var(--green); }
+  .learning-callout { background: var(--learning-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0; font-size: 0.92em; }
+  .learning-callout .label { font-weight: 700; color: var(--accent); font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .lookfor { background: #FFFBEB; border-left: 4px solid var(--amber); border-radius: 0 8px 8px 0; padding: 14px 20px; margin: 16px 0; font-size: 0.92em; }
+  .lookfor .label { font-weight: 700; color: var(--amber); font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .credit { background: #F0FBF4; border-left: 4px solid var(--green); border-radius: 0 8px 8px 0; padding: 14px 20px; margin: 16px 0; font-size: 0.92em; }
+  .credit .label { font-weight: 700; color: var(--green); font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .accomplishment { background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid var(--green); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 24px 0; font-size: 0.92em; }
+  .accomplishment .label { font-weight: 700; color: var(--green); font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .transition-text { font-style: italic; color: var(--text-light); margin: 24px 0 8px; font-size: 0.95em; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  thead th { background: var(--navy); color: white; font-weight: 600; padding: 12px 16px; text-align: left; font-size: 0.88em; }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody td code { font-size: 0.85em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #F8FAFC; }
+  .flow { margin: 24px 0; }
+  .flow-stage { background: white; border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 14px 18px; font-weight: 600; color: var(--navy); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .flow-stage small { font-weight: 400; color: var(--text-light); font-size: 0.82em; }
+  .flow-stage.data { border-left-color: #B07B3E; }
+  .flow-stage.app { border-left-color: #8E44AD; }
+  .flow-stage.ai { border-left-color: var(--accent); }
+  .flow-stage.bu { border-left-color: var(--gold); }
+  .flow-arrow { text-align: center; color: var(--text-light); font-size: 1.1em; line-height: 1; margin: 6px 0; }
+  .flow-phase { font-size: 0.72em; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-light); margin: 18px 0 8px; }
+  .copy-all-btn { background: var(--accent); color: white; border: none; padding: 11px 24px; border-radius: 8px; font-size: 0.9em; font-weight: 600; cursor: pointer; margin: 8px 0 16px; transition: background 0.2s; }
+  .copy-all-btn:hover { background: #A60010; }
+  .copy-all-btn.copied { background: var(--green); }
+  .sql-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.74em; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--text); max-height: 440px; }
+  .persona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .persona { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 0.88em; }
+  .persona strong { color: var(--navy); display: block; margin-bottom: 2px; }
+  .big-num { font-size: 2.2em; font-weight: 700; color: var(--accent); line-height: 1; }
+  .footer { background: var(--navy); color: white; padding: 36px 40px; text-align: center; margin-top: 40px; }
+  .footer p { opacity: 0.7; font-size: 0.9em; }
+  .step-btn { display: inline-block; background: var(--accent); color: white; padding: 10px 22px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.9em; margin: 8px 0; }
+  @media (max-width: 700px) {
+    .welcome-grid, .tip-grid, .persona-grid { grid-template-columns: 1fr; }
+    .hero { padding: 40px 20px; } .hero h1 { font-size: 1.5em; } .hero .subtitle { font-size: 0.95em; }
+    .container { padding: 24px 16px; } .tab-bar { padding: 0 12px; } .tab-btn { padding: 12px 12px; font-size: 0.78em; }
+    .section-divider { padding: 28px 20px; } .section-divider h2 { font-size: 1.4em; } h2 { font-size: 1.35em; }
+    .exercise-card { padding: 20px 16px; } .prompt-block { font-size: 0.82em; padding: 18px 14px; }
+    table { display: block; overflow-x: auto; }
+  }
+  @media print {
+    .tab-bar { display: none; } .hero::before { display: none; }
+    .tab-panel { display: block !important; } .prompt-block, .code-block, .cli-block { cursor: default; }
+    .exercise-card { box-shadow: none; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div style="margin-bottom:22px;position:relative;">
+    <span style="display:inline-block;background:#fff;padding:12px 20px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.22);">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 254.78" width="210" role="img" aria-label="Merchantrade"><defs><style>.cls-2{fill:#fff}</style></defs><g><path d="M0 0h1000v254.78H0z" style="fill:#fe0000"></path><path d="M918.95 96.71h-4.48v-1.16h10.3v1.16h-4.48v11.57h-1.35V96.71ZM940.13 95.54v12.74h-1.29V98.09l-5 8.57h-.64l-5-8.52v10.14h-1.29V95.54h1.11l5.53 9.44 5.48-9.44h1.11ZM130.93 133.92l-22.65-38.38H95.54v63.69h14.58v-35.58l17.14 28.3h3.67v-.27.27h3.66l17.14-28.3v35.58h14.58V95.54h-12.73l-22.65 38.38zM338.34 108.2c6 0 11.13 2.38 15.23 7.07l.4.46 10.12-9.3-.36-.43c-5.99-7.23-15.26-11.21-26.1-11.21-19.95 0-34.43 13.75-34.43 32.7s14.44 32.7 34.34 32.7c11.09 0 20.15-3.91 26.2-11.3l.35-.43-10.12-9.31-.4.47c-4.07 4.75-9.19 7.15-15.22 7.15-11.4 0-19.36-7.93-19.36-19.28s7.96-19.28 19.36-19.28ZM810.01 95.54h-28.07v63.69h28.07c20.99 0 35.09-12.8 35.09-31.85S831 95.53 810.01 95.53Zm-.72 51.09h-12.13v-38.49h12.13c12.59 0 20.42 7.37 20.42 19.25s-7.82 19.24-20.42 19.24ZM414.92 97.47V119.96h-26.88V95.54h-15.46v63.69h15.46v-26.01h26.88v26.01h15.46V95.54h-15.46v1.93zM479.6 95.55h-14.02l-28.41 63.73h15.92v-.08l5.49-13.19h28.26l5.49 13.19v.08h15.92l-28.41-63.73h-.25Zm-15.99 38.39 9.1-21.86 9.1 21.86h-18.2ZM557.57 132.6l-29.1-37.06h-13.42V159.23h15.29v-38.12l29.92 38.12h12.59V95.54h-15.28v37.06zM194.46 120.98h28.47v12.28h-28.47z" class="cls-2"></path><path d="M194.46 108.31h32.46V95.54h-47.83v63.69h5.56v.01h43.42v-12.92h-33.61v-38.01zM871.51 146.5v-13.24h28.46v-12.28h-28.46v-12.75h32.46V95.49H856.14v63.75h48.97V146.5h-33.6zM581.34 108.39h20.59v50.84h15.44v-50.84h20.59V95.54h-56.62v12.85zM748.23 95.55h-14.02l-28.41 63.68 15.92-.03 5.49-13.19h28.18l5.49 13.19 15.92.03-28.41-63.68h-.17Zm-16.03 38.49 9.1-21.86 9.1 21.86h-18.2ZM701.03 118.8c0-14.06-10.88-23.25-26.56-23.25h-28.18v63.68h15.45v-17.18h12.72l11.99 17.18h16.79l-14.25-20.43c7.47-3.85 12.03-10.9 12.03-20Zm-39.28-10.49h11.41c10.49 0 12.22 5.84 12.22 10.48s-1.73 10.48-12.22 10.48h-11.41V108.3ZM295.56 118.8c0-14.06-10.88-23.25-26.56-23.25h-28.18v63.68h15.45v-17.18h12.72l11.99 17.18h16.79l-14.25-20.43c7.47-3.85 12.03-10.9 12.03-20Zm-39.27-10.49h11.41c10.49 0 12.22 5.84 12.22 10.48s-1.73 10.48-12.22 10.48h-11.41V108.3Z" class="cls-2"></path></g></svg>
+    </span>
+  </div>
+  <h1>Building the Ecosystem LTV Engine</h1>
+  <div class="subtitle">Follow Aravind &mdash; a Merchantrade data engineer &mdash; as he builds a complete cross-sell intelligence application in 60 minutes, just by describing what he wants to Cortex Code in Snowsight. Then watch the business team use it, no SQL required.</div>
+  <div class="badge">60-minute hands-on lab</div>
+  <div class="badge">Browser only &middot; nothing to install</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab(this,'overview')">Overview</button>
+  <button class="tab-btn" onclick="switchTab(this,'setup')">Lab Setup</button>
+  <button class="tab-btn" onclick="switchTab(this,'part1')">Part 1 &mdash; Build the Data</button>
+  <button class="tab-btn" onclick="switchTab(this,'part2')">Part 2 &mdash; Build the App</button>
+  <button class="tab-btn" onclick="switchTab(this,'part3')">Part 3 &mdash; Build the Agent</button>
+  <button class="tab-btn" onclick="switchTab(this,'part4')">Part 4 &mdash; Business User</button>
+  <button class="tab-btn" onclick="switchTab(this,'cheatsheet')">API Cheat Sheet</button>
+  <button class="tab-btn" onclick="switchTab(this,'credits')">Credit Budget</button>
+  <button class="tab-btn" onclick="switchTab(this,'summary')">Summary</button>
+</div>
+
+<!-- ===================== OVERVIEW ===================== -->
+<div id="tab-overview" class="tab-panel active">
+<div class="container">
+  <h2>The Business Challenge</h2>
+  <p>Merchantrade spends around <strong>RM100 to acquire every telco customer</strong>. With competitors driving aggressive pricing into the market, the payback period keeps stretching. The only sustainable way to win is to <strong>maximise the lifetime value (LTV)</strong> of customers Merchantrade already has &mdash; by cross-selling ecosystem products: insurance, multi-currency wallets, FMCG purchases, and micro-withdrawals at provision shops.</p>
+  <p>The data to do this already exists across remittance, card, wallet, and top-up systems. The problem is that today, finding a cross-sell segment means raising a ticket to the data team, waiting for an extract, and pulling it into a spreadsheet. By the time the campaign is built, the moment has passed.</p>
+
+  <h2>What This Lab Proves</h2>
+  <p>In 60 minutes, <strong>Aravind</strong> &mdash; a Merchantrade data engineer &mdash; will use <strong>Cortex Code in Snowsight</strong> (the AI assistant built into the Snowflake browser UI) to build an entire cross-sell intelligence application by describing outcomes in plain English:</p>
+  <ol>
+    <li>Generate a realistic ecosystem dataset (customers, remittance, card, wallet top-ups, product holdings)</li>
+    <li>Build a polished Streamlit dashboard with rich visuals on top of it</li>
+    <li>Build a Snowflake Agent that answers business questions in natural language</li>
+  </ol>
+  <p>Then the business team &mdash; like <strong>Jasbir's strategy and marketing group</strong> &mdash; opens <strong>Snowflake CoWork</strong> and the Streamlit app and starts asking questions and building cross-sell segments <em>independently</em>, with zero SQL and zero help from the data team.</p>
+
+  <div class="welcome-grid">
+    <div class="part-card"><h3><span class="part-label">Part 1</span><br>Build the Data</h3><p>Aravind describes the ecosystem data model to Cortex Code in Snowsight &mdash; it generates realistic, governed tables in minutes.</p></div>
+    <div class="part-card"><h3><span class="part-label">Part 2</span><br>Build the App</h3><p>One prompt turns the data into a polished Streamlit cross-sell dashboard with filters and visuals.</p></div>
+    <div class="part-card"><h3><span class="part-label">Part 3</span><br>Build the Agent</h3><p>A semantic view plus a Cortex Agent &mdash; the natural-language brain over the ecosystem data.</p></div>
+    <div class="part-card"><h3><span class="part-label">Part 4</span><br>Business User</h3><p>Jasbir's team uses Snowflake CoWork and the app to find cross-sell segments themselves.</p></div>
+  </div>
+
+  <h3>What Aravind builds</h3>
+  <div class="flow">
+    <div class="flow-phase">Part 1 &mdash; Data Engineer (Cortex Code in Snowsight)</div>
+    <div class="flow-stage data">ECOSYSTEM DATA <small>customers &middot; remittance &middot; card &middot; wallet top-ups &middot; products</small></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-phase">Part 2 &mdash; App Developer</div>
+    <div class="flow-stage app">STREAMLIT DASHBOARD <small>cross-sell segments &middot; LTV visuals &middot; filters</small></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-phase">Part 3 &mdash; AI Engineer</div>
+    <div class="flow-stage ai">SEMANTIC VIEW + CORTEX AGENT <small>ask in plain English</small></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-phase">Part 4 &mdash; Business Users</div>
+    <div class="flow-stage bu">SNOWFLAKE COWORK <small>self-service cross-sell discovery</small></div>
+  </div>
+
+  <h3>The two audiences in the room</h3>
+  <div class="persona-grid">
+    <div class="persona"><strong>Data Engineers &amp; IT</strong>See how fast they ship a full app with Cortex Code in Snowsight &mdash; data, dashboard, and AI &mdash; without leaving the browser.</div>
+    <div class="persona"><strong>Business Users (Jasbir's team)</strong>See how they query and segment customers themselves through CoWork, with no SQL and no waiting on the data team.</div>
+  </div>
+
+  <div class="learning-callout">
+    <div class="label">The message for leadership</div>
+    Every prompt in this lab is designed to be <strong>credit-efficient</strong>. The full build runs on an <strong>X-Small warehouse</strong> with a small synthetic dataset. The point we are proving: Cortex Code <em>accelerates</em> developer delivery while consuming <strong>minimal credits</strong> &mdash; the opposite of the "AI tools burn cost" perception. The Credit Budget tab shows the full accounting.
+  </div>
+
+  <div class="learning-callout">
+    <div class="label">First stop: Lab Setup</div>
+    Open the <strong>Lab Setup</strong> tab to create your free trial account, find Cortex Code in Snowsight, and set the guardrails that keep credit usage low.
+  </div>
+</div>
+</div><!-- end overview -->
+
+<!-- ===================== LAB SETUP ===================== -->
+<div id="tab-setup" class="tab-panel">
+<div class="container">
+
+  <div class="section-divider">
+    <span class="part-label">Lab Setup</span>
+    <h2>Get your environment ready</h2>
+    <p>A free Snowflake trial, Cortex Code open in your browser, and credit guardrails set &mdash; about 10 minutes. Nothing to install.</p>
+  </div>
+
+  <h3>Step 1 &mdash; Create your free trial account</h3>
+  <p>Use the link below to sign up. Choose <strong>Enterprise edition</strong> on <strong>AWS &mdash; US West (Oregon)</strong> when prompted. Your trial includes <strong>USD $400 in free credits</strong> &mdash; far more than this entire lab needs.</p>
+  <a class="step-btn" href="https://signup.snowflake.com/?t=1dca9d843858b8ec77c33fd13a22dcd28efd3c417456afd70d36ee8961a3afaa" target="_blank">Sign up for your Snowflake trial &rarr;</a>
+  <div class="credit"><div class="label">Why these choices matter</div>Enterprise edition unlocks Cortex Agents and Snowflake Intelligence (CoWork). US West (Oregon) gives the lowest AI credit rate via global routing. You will not come close to the $400 limit &mdash; the full lab is budgeted under 25 credits per participant.</div>
+
+  <h3>Step 2 &mdash; Open Cortex Code in Snowsight</h3>
+  <p>Cortex Code is built into the Snowflake browser UI &mdash; there is nothing to install. Once logged into your trial:</p>
+  <ul>
+    <li>In the Snowsight left navigation, look for the <strong>Cortex Code</strong> panel (the AI assistant icon), or open it from <strong>Projects &rarr; Worksheets</strong> where the assistant appears alongside your worksheet.</li>
+    <li>It opens as a chat panel on the right &mdash; this is where you will type every prompt in this lab.</li>
+    <li>You describe what you want; Cortex Code drafts the SQL, runs it against your account, and verifies the result.</li>
+  </ul>
+  <div class="learning-callout"><div class="label">100% browser-based</div>Everything in this lab &mdash; data generation, the Streamlit app, the semantic view, and the agent &mdash; is built right inside Snowsight by typing into the Cortex Code chat panel (with a no-code Autopilot wizard as a backup for the semantic view). No terminal, no installs, no local setup.</div>
+
+  <h3>Step 3 &mdash; Set the credit guardrails (run once)</h3>
+  <p>Before any prompting, run this short script in a Snowsight SQL worksheet. It creates a small warehouse that auto-suspends fast, plus a hard daily cap on Cortex Code spend per user &mdash; so the lab simply <em>cannot</em> run away on credits.</p>
+  <button class="copy-all-btn" id="copySetupBtn" onclick="copyAllSQL()">Copy guardrails.sql to clipboard</button>
+  <div class="sql-block" id="sqlBlock">/* ============================================================================
+   Merchantrade Cortex Code Lab — Step 0: Environment + Credit Guardrails
+   Run this ONCE in a Snowsight SQL worksheet before prompting.
+   ============================================================================ */
+
+-- 1. Database + schema for the lab
+CREATE DATABASE IF NOT EXISTS MERCHANTRADE_LAB
+  COMMENT = 'Merchantrade Cortex Code lab - ecosystem LTV cross-sell';
+CREATE SCHEMA IF NOT EXISTS MERCHANTRADE_LAB.ECOSYSTEM
+  COMMENT = 'Customers, remittance, card, wallet, products';
+
+-- 2. Tiny, fast-suspending warehouse = the single biggest credit control
+CREATE WAREHOUSE IF NOT EXISTS MTA_LAB_WH
+  WAREHOUSE_SIZE = 'XSMALL'        -- 1 credit/hour, the smallest size
+  AUTO_SUSPEND   = 60              -- suspend after 60s idle
+  AUTO_RESUME    = TRUE
+  INITIALLY_SUSPENDED = TRUE
+  COMMENT = 'Merchantrade lab warehouse - XS, auto-suspend 60s';
+
+-- 3. Hard ceiling on Cortex Code spend per user (rolling 24h)
+--    Blocks the surface if a user ever exceeds the cap. Safety net only.
+ALTER ACCOUNT SET CORTEX_CODE_SNOWSIGHT_DAILY_EST_CREDIT_LIMIT_PER_USER = 10;
+
+-- 4. Use the most cost-efficient routing for AI features
+ALTER ACCOUNT SET CORTEX_ENABLED_CROSS_REGION = 'ANY_REGION';  -- global routing = lowest AI credit price
+
+-- 5. A resource monitor so the whole lab warehouse is capped at 50 credits
+CREATE RESOURCE MONITOR IF NOT EXISTS MTA_LAB_MONITOR
+  WITH CREDIT_QUOTA = 50
+  FREQUENCY = MONTHLY
+  START_TIMESTAMP = IMMEDIATELY
+  TRIGGERS
+    ON 80 PERCENT DO NOTIFY
+    ON 100 PERCENT DO SUSPEND;
+ALTER WAREHOUSE MTA_LAB_WH SET RESOURCE_MONITOR = MTA_LAB_MONITOR;
+
+USE DATABASE MERCHANTRADE_LAB;
+USE SCHEMA ECOSYSTEM;
+USE WAREHOUSE MTA_LAB_WH;
+
+SELECT 'Setup complete - guardrails active' AS status;</div>
+
+  <div class="credit"><div class="label">Three layers of credit protection</div>
+    <strong>1.</strong> XS warehouse that suspends in 60 seconds &mdash; you pay only while a query actually runs.<br>
+    <strong>2.</strong> Per-user Cortex Code (Snowsight) daily cap of 10 credits &mdash; an individual cannot overspend.<br>
+    <strong>3.</strong> A 50-credit resource monitor that suspends the warehouse if the whole lab ever approaches it.
+  </div>
+
+  <div class="learning-callout"><div class="label">Make prompts run automatically</div>Cortex Code <strong>drafts</strong> SQL, then asks <strong>"Run this command?"</strong> Click <strong>Always allow</strong> the first time so the session flows without stopping.</div>
+</div>
+</div><!-- end setup -->
+
+<!-- ===================== PART 1 ===================== -->
+<div id="tab-part1" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Part 1</span>
+    <h2>Aravind builds the ecosystem dataset</h2>
+    <p>No CSV uploads, no ticket to another team. Aravind describes the Merchantrade ecosystem data model to Cortex Code in Snowsight, and it generates realistic, related tables he can build on immediately &mdash; all on the XS warehouse.</p>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 1 &mdash; Prompt 0</div>
+    <h2>Set the scene</h2>
+    <div class="capability">Run this first in the Cortex Code panel &mdash; it tells the assistant to execute, verify, and stay credit-aware</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">We are running a hands-on lab in the MERCHANTRADE_LAB database, ECOSYSTEM schema, using the MTA_LAB_WH warehouse. As we go: actually run the SQL you write, keep datasets small and efficient (we are on an X-Small warehouse and want low credit usage), and after building something do one quick check that it worked. Set your context to MERCHANTRADE_LAB.ECOSYSTEM and confirm you are ready.</div>
+    <div class="lookfor"><div class="label">What to look for</div>Cortex Code sets context and confirms. Click <strong>Always allow</strong> on the first "Run this command?" prompt.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 1 &mdash; Prompt 1.1</div>
+    <h2>Generate the customer base</h2>
+    <div class="capability">Realistic Malaysian money-services customer profiles</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create a table CUSTOMERS with 2000 rows of realistic Merchantrade customers. Include: customer_id, full_name, nationality (mix of Malaysian, Bangladeshi, Indonesian, Nepali, Filipino, Indian reflecting a remittance customer base), home_state (Malaysian states), acquisition_channel (Telco/HelloSIM, Branch, App, Agent), customer_tier (Tier 1/2/3), join_date in the last 3 years, and is_telco_acquired flag. Keep it efficient with a single GENERATOR query. Show me 10 sample rows and the count by acquisition_channel.</div>
+    <div class="lookfor"><div class="label">What to look for</div>2,000 customers generated in one efficient query. Telco/HelloSIM acquired customers are clearly flagged &mdash; these are the high-CAC customers the business needs to monetise.</div>
+    <div class="credit"><div class="label">Credit note</div>Generating 2,000 rows on an XS warehouse takes seconds and a fraction of a credit. Small data is deliberate &mdash; it proves the pattern without burning compute.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 1 &mdash; Prompt 1.2</div>
+    <h2>Generate remittance history</h2>
+    <div class="capability">The core product &mdash; the reason customers were acquired</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create a table REMITTANCE_TXNS with about 12000 rows linked to CUSTOMERS. Include: txn_id, customer_id, txn_date in the last 12 months, send_amount_myr (realistic remittance amounts 100-5000), corridor (Malaysia to Bangladesh, Indonesia, Nepal, Philippines, India), collecting_agent_country, and channel (App, Branch, Agent). Make it realistic - frequent senders should have more rows. Show me total volume by corridor.</div>
+    <div class="lookfor"><div class="label">What to look for</div>~12,000 remittance transactions with realistic corridor distribution. Some customers transact often, others rarely &mdash; the variation is what makes segmentation meaningful.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 1 &mdash; Prompt 1.3</div>
+    <h2>Generate card, wallet top-up &amp; product holdings</h2>
+    <div class="capability">The cross-sell signals &mdash; who already uses what</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create three more tables linked to CUSTOMERS, all efficient:
+1. CARD_TXNS (~8000 rows): card transactions with txn_id, customer_id, txn_date, amount_myr, merchant_category (Groceries/FMCG, Dining, Utilities, Retail, Insurance, Telco Top-up). Only about 40% of customers should have card activity.
+2. WALLET_TOPUPS (~3000 rows): Sellcoupon/prepaid top-ups with topup_id, customer_id, topup_date, amount_myr, product (Mobile Prepaid, Multi-currency Wallet, Insurance Micropayment). Only about 25% of customers.
+3. PRODUCT_HOLDINGS: one row per customer listing which ecosystem products they hold (Remittance, Card, Wallet, Insurance) as boolean flags.
+Show me how many customers hold 1, 2, 3, or 4 products.</div>
+    <div class="lookfor"><div class="label">What to look for</div>A realistic ecosystem where most customers use only remittance, fewer use card, and very few use wallet or insurance. That gap &mdash; single-product customers &mdash; is the entire cross-sell opportunity.</div>
+    <div class="accomplishment"><div class="label">What Aravind just accomplished</div>A complete, realistic Merchantrade ecosystem dataset &mdash; five related tables across remittance, card, wallet, and product holdings &mdash; generated entirely by describing it, with no source extracts and minimal credits.</div>
+  </div>
+</div>
+</div><!-- end part1 -->
+
+<!-- ===================== PART 2 ===================== -->
+<div id="tab-part2" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Part 2</span>
+    <h2>Aravind builds the cross-sell dashboard</h2>
+    <p>On-prem, a dashboard means a BI ticket and a week of back-and-forth. Here Aravind builds a polished, multi-page Streamlit app by describing it &mdash; running inside Snowflake on the same XS warehouse. The trick to a clean build: <strong>tell Cortex Code the runtime rules first</strong> so it writes version-safe code from the start, instead of debugging errors after.</p>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 2 &mdash; Prompt 2.1</div>
+    <h2>Build the cross-sell segment view first</h2>
+    <div class="capability">One governed view the dashboard and the agent will both reuse</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create a view CUSTOMER_LTV_SEGMENTS that joins CUSTOMERS, REMITTANCE_TXNS, CARD_TXNS, WALLET_TOPUPS and PRODUCT_HOLDINGS. For each customer include: profile fields, total remittance volume and count, total card spend, total wallet topups, number of products held, last activity date, and a segment label: 'Remittance Only - Cross-sell Target' if they only remit, 'Multi-Product - Retain & Upsell' if 2+ products, 'Dormant - Re-engage' if no activity in 90 days. Show me the customer count and average remittance volume by segment.</div>
+    <div class="lookfor"><div class="label">What to look for</div>One clean view that classifies every customer into a cross-sell segment. The "Remittance Only" group is the high-CAC, single-product cohort the business most wants to convert.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 2 &mdash; Prompt 2.2</div>
+    <h2>Set the engineering ground rules first</h2>
+    <div class="capability">Establish a runtime contract before any code is written</div>
+    <p>Streamlit in Snowflake runs on a managed warehouse runtime that pins a stable, conservative Streamlit baseline. This is good engineering practice anywhere: agree the runtime constraints with your AI partner up front, and it writes clean, compatible code the first time &mdash; no trial-and-error loop. Run this once at the start of the app build.</p>
+    <div class="prompt-block" onclick="copyPrompt(this)">You are my Streamlit-in-Snowflake engineering partner. Before writing any application code, let's agree on a runtime contract. This app runs inside Snowflake on a managed warehouse runtime that pins a stable, conservative Streamlit baseline, so please adopt the following standards for everything that follows.
+
+1. Session and data access — Obtain the Snowflake session in-process: from snowflake.snowpark.context import get_active_session, then session = get_active_session(). Read data with session.sql(...).to_pandas(). Use this pattern rather than st.connection() for the broadest runtime compatibility.
+
+2. API baseline — Target a conservative Streamlit baseline (assume ~1.22) and use only stable, long-established API surface. Avoid recently introduced arguments and helpers such as hide_index, column_config, border= on containers, horizontal= on radio, and st.divider(); prefer the simplest documented form, and use st.markdown("---") for separators.
+
+3. Visualization — Use Altair (import altair as alt; render with st.altair_chart(chart, use_container_width=True)). Altair is bundled with Streamlit and always available. Do not import Plotly — it is not pre-installed on this runtime and will raise ModuleNotFoundError. st.bar_chart and st.line_chart are acceptable fallbacks.
+
+4. Performance and cost — Query Snowflake once, cache results with @st.cache_data, and filter in pandas in memory, so the warehouse stays idle between interactions and credit usage stays minimal.
+
+Please confirm you understand these standards and state the Streamlit baseline you will target. I'll then send the app specification.</div>
+    <div class="lookfor"><div class="label">What good looks like</div>Cortex Code restates the standards in its own words and names the Streamlit baseline it will target (typically Streamlit 1.22). When it replies that it's ready for the spec, that's your cue &mdash; <strong>simply paste Prompt 2.3 below next. It is the app specification; you don't need to type anything else.</strong></div>
+    <div class="learning-callout"><div class="label">Why this is a best practice</div>Setting a runtime contract before generating code isn't a workaround &mdash; it's how senior engineers brief any collaborator, human or AI. It moves constraints to the front of the conversation, where they cost nothing, instead of discovering them later as runtime errors.</div>
+    <div class="lookfor"><div class="label">Facilitator note &mdash; do not skip this</div>Run Prompt 2.2 <strong>before</strong> Prompt 2.3, every time. In testing, skipping this step is the single biggest cause of broken apps (<code>hide_index</code>, <code>st.connection</code>, <code>plotly</code> import errors). With the contract set first, the app builds clean on the first attempt. Keep the <strong>API Cheat Sheet</strong> tab open on a second screen during the build.</div>
+  </div>
+
+  <div class="flow-note" style="margin:18px 0;padding:14px 18px;border-left:4px solid #E2231A;background:#FDEEEC;border-radius:6px;color:#4A0D14;">
+    <strong>Next step &mdash; no filler needed.</strong> Once Cortex Code confirms the contract and says it's ready for the spec, paste <strong>Prompt 2.3</strong> straight away. That prompt <em>is</em> the &ldquo;next prompt&rdquo; it's waiting for &mdash; there's no need to type &ldquo;go ahead&rdquo; in between.
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 2 &mdash; Prompt 2.3</div>
+    <h2>Build the multi-page cross-sell command centre</h2>
+    <div class="capability">A clean, navigable, four-page analytics app</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Build a four-page Streamlit in Snowflake app called MTA_CROSS_SELL over the CUSTOMER_LTV_SEGMENTS view, following the runtime contract you confirmed. Keep the code simple and robust.
+
+LAYOUT
+- Wide layout, a Merchantrade red-to-dark-red header band (e.g. #E2231A to #8E0008), and sidebar st.radio navigation.
+- Sidebar filters shared across pages: segment, home_state, acquisition_channel, with a "Reset filters" button.
+
+PAGES
+1. Overview — KPI tiles (total customers, cross-sell targets, avg lifetime value, total remittance volume); Altair bar of customers by segment; Altair donut of products held.
+2. Cross-Sell Targets — filter to 'Remittance Only - Cross-sell Target'; KPI tiles; Altair bar by acquisition_channel; a campaign estimator (activation-rate slider that computes projected uplift).
+3. Geography — Altair bar of targets by home_state; Altair bar of remittance volume by nationality.
+4. Customer Explorer — filtered table (default index); a search box; a CSV download button.
+
+CODING RULES
+- get_active_session() for data; load the view once, cache with @st.cache_data, filter in pandas.
+- Altair only (no Plotly); st.markdown("---") for separators.
+- Python 3.11: never reuse the same quote character inside an f-string. Compute values into variables first, e.g. total = df.shape[0]; st.metric("Rows", f"{total:,}"). Do NOT write f"{df['col'].sum():,}" inside double quotes.
+- Run on MTA_LAB_WH.</div>
+    <div class="lookfor"><div class="label">What good looks like</div>A clean four-page app &mdash; KPI tiles, Altair charts, a campaign estimator, search, and CSV export &mdash; that builds on the first attempt because the contract and the simple coding rules keep the generated code free of edge cases.</div>
+    <div class="credit"><div class="label">Credit note</div><strong>Query once, cache, filter in pandas.</strong> Every page and filter reuses one cached pull, so the dashboard barely touches the warehouse &mdash; a real app at minimal cost.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 2 &mdash; Prompt 2.4</div>
+    <h2>If anything needs adjusting, resolve it in one prompt</h2>
+    <div class="capability">A single follow-up keeps you in flow &mdash; no manual version debugging</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">If the app reports an error, read the exact message and resolve it by replacing the affected API with the version-safe equivalent for our agreed runtime baseline &mdash; for example, use a default index instead of hide_index, get_active_session() instead of st.connection, Altair instead of Plotly, and avoid border/horizontal arguments and st.column_config. Then confirm the app loads cleanly across every page.</div>
+    <div class="lookfor"><div class="label">What to look for</div>One prompt resolves any residual version issue by swapping to the compatible API &mdash; no manual editing.</div>
+    <div class="accomplishment"><div class="label">What Aravind just accomplished</div>A polished, six-page cross-sell command centre &mdash; KPI tiles, interactive Altair visuals, a campaign estimator, and CSV export &mdash; built by description, version-safe by design, and running inside Snowflake for a few credits.</div>
+  </div>
+</div>
+</div><!-- end part2 -->
+
+<!-- ===================== PART 3 ===================== -->
+<div id="tab-part3" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Part 3</span>
+    <h2>Aravind builds the AI agent</h2>
+    <p>The dashboard answers the questions Aravind anticipated. The agent answers the questions the business hasn't thought of yet &mdash; in plain English. He builds the semantic layer and the agent that powers Snowflake CoWork.</p>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 3 &mdash; Prompt 3.1</div>
+    <h2>Create the semantic view</h2>
+    <div class="capability">The business model the agent reasons over</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create a semantic view called MTA_ECOSYSTEM_ANALYST over MERCHANTRADE_LAB.ECOSYSTEM.CUSTOMER_LTV_SEGMENTS for Cortex Analyst.
+
+Deploy it with the YAML stored procedure — this is the only reliable path:
+CALL SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML('MERCHANTRADE_LAB.ECOSYSTEM', $$ ...YAML spec... $$);
+- The first argument is the SCHEMA (database.schema), NOT the view name — the name comes from the YAML's name: field.
+- Do not use CREATE SEMANTIC VIEW ... AS, YAML =, or SPECIFICATION = — those fail.
+
+First run DESCRIBE on the table to get exact column names. In the YAML, write each metric as a table-qualified aggregation, e.g. SUM(CUSTOMER_LTV_SEGMENTS.REMITTANCE_VOLUME).
+
+Dimensions: segment, home_state, nationality, acquisition_channel, customer_tier, products_held.
+Metrics: customer count, total and average remittance volume, total card spend, total wallet top-ups.
+Add synonyms on segment (e.g. "cross-sell target") and 2-3 verified_queries with real cross-sell questions.
+
+Validate first with the procedure's 3rd argument TRUE (dry run), then create it, then confirm with SHOW SEMANTIC VIEWS and one SELECT ... FROM SEMANTIC_VIEW(...) query.</div>
+    <div class="lookfor"><div class="label">What good looks like</div>The procedure returns "Semantic view was successfully created", and the verification query returns rows &mdash; the governed layer that lets a marketing manager ask "show me cross-sell targets" and get the right answer.</div>
+    <div class="learning-callout"><div class="label">The two rules that prevent the failures</div>(1) Deploy through <code>SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML</code>, not <code>CREATE SEMANTIC VIEW ... AS &lt;yaml&gt;</code> (that DDL doesn't exist). (2) Its first argument is the <strong>schema</strong> (<code>DB.SCHEMA</code>), not the view name &mdash; passing the view name causes "unexpected number of qualifiers". Still no-code as a backup: <strong>AI &amp; ML &rarr; Cortex Analyst &rarr; Create new &rarr; Semantic view</strong> (Autopilot wizard).</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 3 &mdash; Prompt 3.2</div>
+    <h2>Sanity-check it in plain English</h2>
+    <div class="prompt-block" onclick="copyPrompt(this)">Using the MTA_ECOSYSTEM_ANALYST semantic view, how many telco-acquired customers are 'Remittance Only - Cross-sell Target', broken down by home_state?</div>
+    <div class="lookfor"><div class="label">What to look for</div>Natural language in, governed SQL and a real answer out &mdash; proof the semantic layer is wired correctly before it goes to the business.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 3 &mdash; Prompt 3.3</div>
+    <h2>Build the Cortex Agent</h2>
+    <div class="capability">The conversational front door for the business team</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Create a Cortex Agent called MTA_CROSS_SELL_AGENT that uses the MTA_ECOSYSTEM_ANALYST semantic view to answer questions about customer segments, cross-sell opportunities, remittance behaviour and lifetime value, and can draw a chart when it helps. Give it a short description aimed at marketing and strategy users.</div>
+    <div class="lookfor"><div class="label">What to look for</div>A reasoning agent over Merchantrade's own governed data &mdash; the brain behind the CoWork experience the business team is about to use.</div>
+    <div class="accomplishment"><div class="label">What Aravind just accomplished</div>The full AI layer &mdash; semantic view plus agent &mdash; built by description and grounded in the exact ecosystem data he generated in Part 1. Nothing copied out, nothing re-secured.</div>
+  </div>
+</div>
+</div><!-- end part3 -->
+
+<!-- ===================== PART 4 ===================== -->
+<div id="tab-part4" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Part 4</span>
+    <h2>Jasbir's team takes over &mdash; no SQL</h2>
+    <p>Aravind hands off. Now the business users &mdash; strategy, marketing, HelloSIM &mdash; open <strong>Snowflake CoWork</strong> and the Streamlit app and discover cross-sell segments themselves. This is the part that changes how Merchantrade works.</p>
+  </div>
+
+  <div class="learning-callout">
+    <div class="label">Where the business users go</div>
+    In Snowsight, open <strong>Snowflake Intelligence / CoWork</strong> and select the <strong>MTA_CROSS_SELL_AGENT</strong>. For the dashboard, open <strong>Projects &rarr; Streamlit &rarr; MTA_CROSS_SELL</strong>. No SQL, no setup &mdash; just ask and explore.
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 4 &mdash; Question Set A</div>
+    <h2>Marketing &amp; Strategy ask CoWork</h2>
+    <p>Type these straight into the agent &mdash; each returns an answer and, where useful, a chart:</p>
+    <div class="prompt-block" onclick="copyPrompt(this)">How many of our telco-acquired customers use only remittance and no other product? Break it down by home state.</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">What is the average lifetime value of multi-product customers compared to single-product customers?</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">Which states have the most cross-sell targets who have been dormant for over 90 days?</div>
+    <div class="prompt-block" onclick="copyPrompt(this)">If 20% of our remittance-only customers activated one card product, what would the additional spend look like based on current averages?</div>
+    <div class="lookfor"><div class="label">What to look for</div>A marketing manager who has never written SQL is now segmenting the customer base, quantifying the cross-sell opportunity, and getting charts back in seconds &mdash; entirely self-service.</div>
+  </div>
+
+  <div class="exercise-card">
+    <div class="progress-tag">Part 4 &mdash; Question Set B</div>
+    <h2>HelloSIM &amp; Operations explore the dashboard</h2>
+    <p>In the <strong>MTA_CROSS_SELL</strong> Streamlit app, use the sidebar filters to:</p>
+    <ul>
+      <li>Filter to <strong>acquisition_channel = Telco/HelloSIM</strong> and <strong>segment = Remittance Only</strong> &mdash; the exact high-CAC cohort to target</li>
+      <li>Filter by <strong>home_state</strong> to size a regional campaign</li>
+      <li>Filter by <strong>nationality</strong> to tailor a corridor-specific offer</li>
+    </ul>
+    <div class="accomplishment"><div class="label">The wow moment</div>The business team just built campaign-ready cross-sell segments in minutes &mdash; without raising a single data request. Aravind built the engine once; the whole organisation now self-serves on it.</div>
+  </div>
+
+  <div class="learning-callout">
+    <div class="label">Tie it back to the RM100 CAC</div>
+    Close the session by reminding the room: every customer in the "Remittance Only" segment cost roughly RM100 to acquire. This application &mdash; built in 60 minutes by one engineer &mdash; lets the business find and monetise them on demand. That is LTV expansion paying down CAC, in production.
+  </div>
+</div>
+</div><!-- end part4 -->
+
+<!-- ===================== API CHEAT SHEET ===================== -->
+<div id="tab-cheatsheet" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Appendix</span>
+    <h2>Streamlit in Snowflake &mdash; API Cheat Sheet</h2>
+    <p>A quick reference for the managed warehouse runtime's Streamlit baseline. Share it with participants so everyone writes compatible code from the start &mdash; it pairs each newer API with its stable, always-supported equivalent.</p>
+  </div>
+
+  <h3>The golden rule</h3>
+  <div class="learning-callout"><div class="label">Connect through the Snowpark session</div>
+  <code>from snowflake.snowpark.context import get_active_session</code><br>
+  <code>session = get_active_session()</code><br>
+  <code>df = session.sql("SELECT * FROM CUSTOMER_LTV_SEGMENTS").to_pandas()</code><br><br>
+  This is the most broadly compatible way to reach Snowflake data from inside the runtime. Prefer it over <code>st.connection("snowflake")</code>, which is not guaranteed on this baseline.</div>
+
+  <h3>Newer API &rarr; stable equivalent</h3>
+  <table>
+    <thead><tr><th>Newer API to avoid</th><th>Symptom on this runtime</th><th>Stable equivalent</th></tr></thead>
+    <tbody>
+      <tr><td><code>st.connection("snowflake")</code></td><td><code>module 'streamlit' has no attribute 'connection'</code></td><td><code>get_active_session()</code> from <code>snowflake.snowpark.context</code></td></tr>
+      <tr><td><code>st.dataframe(df, hide_index=True)</code></td><td><code>unexpected keyword argument 'hide_index'</code></td><td><code>st.dataframe(df)</code> &mdash; default index is fine</td></tr>
+      <tr><td><code>st.container(border=True)</code></td><td><code>unexpected keyword argument 'border'</code></td><td><code>st.container()</code> + a markdown divider</td></tr>
+      <tr><td><code>st.radio(..., horizontal=True)</code></td><td><code>unexpected keyword argument 'horizontal'</code></td><td><code>st.radio(...)</code> (vertical) or use <code>st.tabs</code></td></tr>
+      <tr><td><code>st.column_config.*</code></td><td><code>module has no attribute 'column_config'</code></td><td>Pre-format columns in pandas before display</td></tr>
+      <tr><td><code>st.dataframe(df, use_container_width=True)</code></td><td>may be ignored / inconsistent</td><td><code>st.dataframe(df, width=1100)</code> or omit</td></tr>
+      <tr><td><code>st.cache</code> / experimental cache</td><td>deprecation or no-op</td><td><code>@st.cache_data</code></td></tr>
+      <tr><td><code>import plotly.express as px</code></td><td><code>ModuleNotFoundError: No module named 'plotly'</code></td><td><code>import altair as alt</code> &mdash; bundled, always available</td></tr>
+      <tr><td><code>st.divider()</code></td><td><code>module has no attribute 'divider'</code></td><td><code>st.markdown("---")</code></td></tr>
+      <tr><td><code>f"{df["col"].sum():,}"</code></td><td><code>SyntaxError: f-string: unmatched '['</code> (Python 3.11)</td><td>Compute first: <code>v = df["col"].sum()</code> then <code>f"{v:,}"</code> &mdash; never reuse the same quote inside an f-string</td></tr>
+      <tr><td><code>st.rerun()</code></td><td><code>module has no attribute 'rerun'</code></td><td><code>st.experimental_rerun()</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Known-good patterns (copy these)</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-label">safe_app_skeleton.py</div>
+    <div class="code-block" onclick="copyCode(this)">import streamlit as st
+import pandas as pd
+import altair as alt   # bundled with Streamlit — NOT plotly (plotly is not installed)
+from snowflake.snowpark.context import get_active_session
+
+st.set_page_config(layout="wide", page_title="Merchantrade Cross-Sell")
+
+session = get_active_session()
+
+# Query ONCE, cache, then filter in pandas (keeps the XS warehouse idle)
+@st.cache_data
+def load_data():
+    return session.sql("SELECT * FROM CUSTOMER_LTV_SEGMENTS").to_pandas()
+
+df = load_data()
+
+# Sidebar navigation (radio is reliable on old runtimes)
+page = st.sidebar.radio("Navigate", [
+    "Executive Overview", "Cross-Sell Targets",
+    "Corridor & Geography", "Customer Explorer"])
+
+# Global filters
+seg = st.sidebar.multiselect("Segment", sorted(df["SEGMENT"].unique()))
+view = df[df["SEGMENT"].isin(seg)] if seg else df
+
+# KPI tiles
+c1, c2, c3 = st.columns(3)
+c1.metric("Customers", f"{len(view):,}")
+c2.metric("Avg LTV (RM)", f"{view['LIFETIME_VALUE'].mean():,.0f}")
+c3.metric("Cross-sell Targets",
+          f"{(view['SEGMENT']=='Remittance Only - Cross-sell Target').sum():,}")
+
+# Altair chart (mark_bar). Render with st.altair_chart.
+seg = view.groupby("SEGMENT").size().reset_index(name="N")
+chart = (alt.Chart(seg).mark_bar(color="#E2231A")
+         .encode(x=alt.X("SEGMENT:N", sort="-y"), y="N:Q"))
+st.altair_chart(chart, use_container_width=True)
+
+# Table (default index — no hide_index)
+st.dataframe(view)
+
+# CSV export
+st.download_button("Download CSV", view.to_csv(index=False),
+                   "cross_sell.csv", "text/csv")</div>
+  </div>
+
+  <div class="learning-callout"><div class="label">If something still breaks</div>Paste the exact error into Cortex Code with: <em>"Fix this for an older Streamlit runtime by replacing the unsupported API with the version-safe equivalent."</em> One prompt resolves it &mdash; never hand-debug.</div>
+
+  <h3>Deployment notes (for the facilitator)</h3>
+  <ul>
+    <li>Build the app via <strong>Projects &rarr; Streamlit &rarr; + Streamlit App</strong> in Snowsight, or let Cortex Code create it with <code>CREATE STREAMLIT</code>.</li>
+    <li>Set the app's <strong>query warehouse to MTA_LAB_WH</strong> so it inherits the XS + auto-suspend guardrails.</li>
+    <li>Charts: use <strong>Altair</strong> (<code>import altair as alt</code>) &mdash; it ships bundled with Streamlit and is the most reliable rich-visual library on the SiS runtime. <strong>Plotly is NOT installed</strong> and will throw <code>ModuleNotFoundError</code>. <code>st.bar_chart</code> / <code>st.line_chart</code> are safe fallbacks.</li>
+  </ul>
+</div>
+</div><!-- end cheatsheet -->
+
+<!-- ===================== CREDIT BUDGET ===================== -->
+<div id="tab-credits" class="tab-panel">
+<div class="container">
+  <div class="section-divider">
+    <span class="part-label">Credit Budget</span>
+    <h2>The honest cost of this lab</h2>
+    <p>Designed to prove the opposite of the "AI developer tools burn credits" perception. Here is the full accounting.</p>
+  </div>
+
+  <h3>Two credit types apply</h3>
+  <p>Snowflake separates <strong>AI Credits</strong> (Cortex Code, Cortex Agents, Snowflake Intelligence &mdash; token-based) from <strong>Platform Credits</strong> (warehouse compute). This lab is deliberately light on both.</p>
+
+  <h3>Per-participant estimate (full 60-minute build)</h3>
+  <table>
+    <thead><tr><th>Activity</th><th>Credit Type</th><th>Est. Credits</th></tr></thead>
+    <tbody>
+      <tr><td>Part 1 &mdash; data generation (5 tables, XS warehouse)</td><td>Platform</td><td>~0.5</td></tr>
+      <tr><td>Part 1&ndash;3 &mdash; Cortex Code prompts (~25 build prompts)</td><td>AI</td><td>~1.0</td></tr>
+      <tr><td>Part 2 &mdash; Streamlit app build + viewing</td><td>Platform</td><td>~0.5</td></tr>
+      <tr><td>Part 3 &mdash; semantic view + agent creation</td><td>AI + Platform</td><td>~0.3</td></tr>
+      <tr><td>Part 4 &mdash; CoWork questions (~10 per user)</td><td>AI</td><td>~0.4</td></tr>
+      <tr><td><strong>Total per participant</strong></td><td></td><td><strong>~2.7 credits</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="credit"><div class="label">What that means in dollars</div>At roughly $2&ndash;$3 per credit, a participant's full hands-on build costs <strong>under $10</strong>. The $400 trial credit covers the entire lab for a large group many times over.</div>
+
+  <h3>Why it stays low &mdash; by design</h3>
+  <ul>
+    <li><strong>X-Small warehouse, 60-second auto-suspend</strong> &mdash; compute is billed only while a query actually runs, which is seconds at a time.</li>
+    <li><strong>Small synthetic data</strong> (~25,000 rows total) &mdash; large enough to be realistic, small enough that every query is near-instant.</li>
+    <li><strong>Global AI routing</strong> &mdash; the lowest AI credit price.</li>
+    <li><strong>Per-user Cortex Code cap (10 credits/day)</strong> and a <strong>50-credit resource monitor</strong> &mdash; hard ceilings that make overspend impossible.</li>
+    <li><strong>Focused prompts</strong> &mdash; each prompt asks for a complete, verifiable outcome rather than long back-and-forth, which keeps token usage down.</li>
+  </ul>
+
+  <div class="learning-callout">
+    <div class="label">The leadership takeaway</div>
+    The fear is that giving developers AI tools like Cortex Code will inflate the bill. This lab demonstrates the reverse: one engineer built a complete data-to-dashboard-to-AI application for a few credits, and the business now self-serves on it &mdash; replacing days of data-team effort per request. Cortex Code <strong>accelerates delivery while reducing the cost per outcome</strong>.
+  </div>
+
+  <h3>Verify it yourself after the lab</h3>
+  <p>Run this in a worksheet to see exactly what the session consumed:</p>
+  <div class="code-block-wrapper">
+    <div class="code-block-label">verify_spend.sql</div>
+    <div class="code-block" onclick="copyCode(this)">-- Cortex Code (AI) spend in the last day
+SELECT 'CORTEX_CODE_SNOWSIGHT' AS service, ROUND(SUM(token_credits),3) AS ai_credits
+FROM SNOWFLAKE.ACCOUNT_USAGE.CORTEX_CODE_SNOWSIGHT_USAGE_HISTORY
+WHERE usage_time >= DATEADD('day', -1, CURRENT_TIMESTAMP())
+UNION ALL
+-- Snowflake Intelligence / CoWork (AI) spend
+SELECT 'SNOWFLAKE_INTELLIGENCE', ROUND(SUM(token_credits),3)
+FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_INTELLIGENCE_USAGE_HISTORY
+WHERE start_time >= DATEADD('day', -1, CURRENT_TIMESTAMP())
+UNION ALL
+-- Warehouse (Platform) spend
+SELECT 'WAREHOUSE_COMPUTE', ROUND(SUM(credits_used),3)
+FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY
+WHERE start_time >= DATEADD('day', -1, CURRENT_TIMESTAMP())
+  AND warehouse_name = 'MTA_LAB_WH';</div>
+  </div>
+</div>
+</div><!-- end credits -->
+
+<!-- ===================== SUMMARY ===================== -->
+<div id="tab-summary" class="tab-panel">
+<div class="container">
+  <h2>What we proved today</h2>
+  <p>In 60 minutes, one Merchantrade engineer built a complete cross-sell intelligence application &mdash; data, dashboard, and AI agent &mdash; just by describing outcomes to Cortex Code. Then the business team used it themselves, with no SQL and no data-team dependency. For a handful of credits.</p>
+
+  <table>
+    <thead><tr><th>Stage</th><th>The old way</th><th>With Cortex Code today</th></tr></thead>
+    <tbody>
+      <tr><td>Build the dataset</td><td>Ticket to data team, extract, load, model &mdash; days</td><td>Describe it; generated in minutes</td></tr>
+      <tr><td>Build the dashboard</td><td>BI request, sprint, review cycle &mdash; weeks</td><td>One prompt; polished Streamlit app</td></tr>
+      <tr><td>Add AI / NL access</td><td>Separate platform, data copies, another team</td><td>Semantic view + agent on the same data</td></tr>
+      <tr><td>Business self-service</td><td>Raise a request, wait for an extract</td><td>Ask CoWork directly, get a chart back</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The through-line</h3>
+  <p>The same ecosystem data flowed from generation, to a governed dashboard, to a conversational agent, to the business team's own hands &mdash; each layer building on the last, all inside Snowflake, all governed, all for a few credits.</p>
+
+  <div class="accomplishment">
+    <div class="label">Where Merchantrade goes next</div>
+    Point this exact pattern at the real remittance, card, and wallet feeds. The application Aravind built becomes the live cross-sell engine &mdash; finding and monetising single-product customers on demand, expanding LTV to offset the RM100 CAC. Same platform, same low cost per outcome; just connect the real data.
+  </div>
+
+  <div class="learning-callout">
+    <div class="label">Reset between sessions</div>
+    To start clean: <code>DROP DATABASE IF EXISTS MERCHANTRADE_LAB;</code> then re-run the guardrails script from the Lab Setup tab.
+  </div>
+</div>
+</div><!-- end summary -->
+
+<div class="footer">
+  <p>Merchantrade &times; Snowflake &middot; Building the Ecosystem LTV Engine with Cortex Code &middot; Hands-on Lab</p>
+</div>
+
+<script>
+  function switchTab(btn, id) {
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+  function doCopy(text, el, copiedClass) {
+    var done = function(){
+      el.classList.add(copiedClass);
+      setTimeout(function(){ el.classList.remove(copiedClass); }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+    } else { fallbackCopy(text); done(); }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  function copyPrompt(el) { doCopy(el.innerText, el, 'copied'); }
+  function copyCode(el) { doCopy(el.innerText, el, 'copied'); }
+  function copyAllSQL() {
+    var block = document.getElementById('sqlBlock');
+    var btn = document.getElementById('copySetupBtn');
+    doCopy(block.innerText, btn, 'copied');
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = orig; }, 1500);
+  }
+</script>
+</body>
+</html>
